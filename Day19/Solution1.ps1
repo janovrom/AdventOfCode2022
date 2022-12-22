@@ -1,4 +1,4 @@
-$fileData = Get-Content ".\input.txt"
+$fileData = Get-Content ".\input-ps.txt"
 
 # each array is cost of (ore, clay, obsidian, geode) robot
 $blueprints = New-Object 'System.Collections.Generic.List[object]'
@@ -16,6 +16,7 @@ $blueprints | Foreach-Object -ThrottleLimit 5 -Parallel {
     # [ore robot, clay robot, obsidian robot, geode robot, ore, clay, obsidian, geode, minute]
     $initialState = @(1,0,0,0,0,0,0,0,0)
     $stack = New-Object 'System.Collections.Generic.Stack[object]'
+    $pool = New-Object 'System.Collections.Generic.List[object]'
     [void]$stack.Push(@() + $initialState)
     $highestGeodeCount = 0
     # We can cut the branch, if we created geode robot at some time and the branch does not have it at the same time.
@@ -30,12 +31,28 @@ $blueprints | Foreach-Object -ThrottleLimit 5 -Parallel {
 
         if ($state[8] -ge $timeToCut -and $state[3] -eq 0)
         {
+            $pool.Add($state)
+            continue
+        }
+
+        # Skip if we can't build geode fast enough
+        if ($state[1] -eq 0 -and $state[2] -eq 0 -and $state[8] + 2 -ge $timeToCut -and $state[3] -eq 0)
+        {
+            $pool.Add($state)
+            continue
+        }
+
+        # Skip if we can't build geode fast enough
+        if (($state[1] -eq 0 -or $state[2] -eq 0) -and $state[8] + 1 -ge $timeToCut -and $state[3] -eq 0)
+        {
+            $pool.Add($state)
             continue
         }
 
         if ($state[3] -eq 0 -and $state[8] -eq 23)
         {
             # Even if we start now, it's too late
+            $pool.Add($state)
             continue
         }
 
@@ -43,6 +60,7 @@ $blueprints | Foreach-Object -ThrottleLimit 5 -Parallel {
         {
             # Time's out
             $highestGeodeCount = [System.Math]::Max($highestGeodeCount, $state[7])
+            $pool.Add($state)
             continue
         }
 
@@ -72,7 +90,17 @@ $blueprints | Foreach-Object -ThrottleLimit 5 -Parallel {
                     $timeToCut = [System.Math]::Min($timeToCut, $state[8])
                 }
 
-                $newState = @() + $state
+                if ($pool.Count -gt 0)
+                {
+                    $newState = $pool[$pool.Count - 1]
+                    [void]$pool.RemoveAt($pool.Count - 1)
+                    [array]::Copy($state, $newState, 9)
+                }
+                else 
+                {
+                    $newState = @() + $state
+                }
+
                 # Add robot
                 $newState[$i] += 1
                 # Remove ores
@@ -86,13 +114,17 @@ $blueprints | Foreach-Object -ThrottleLimit 5 -Parallel {
         }
 
         # Collect
-        if ($newStates.Count -ne 3)
+        if ($newStates.Count -eq 0)
         {
             $state[4] += $state[0]
             $state[5] += $state[1]
             $state[6] += $state[2]
             $state[7] += $state[3]
             $stack.Push($state)
+        }
+        else 
+        {
+            $pool.Add($state)
         }
 
         # Add current state before so that we prioritize building
