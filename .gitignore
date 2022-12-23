@@ -2,13 +2,14 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Mm]emoryCaptures/
+/**/[Ll]ibrary/
+/**/[Tt]emp/
+/**/[Oo]bj/
+/**/[Bb]uild/
+/**/[Bb]uilds/
+/**/UserSettings/
+/**/[Ll]ogs/
+/**/[Mm]emoryCaptures/
 
 # C# and C++ builds
 /**/bin/
@@ -27,8 +28,13 @@
 
 # Visual Studio cache directory
 .vs/
+
+# Specific project files
 /Day14/**/*.sln
 /Day14/**/*.csproj
+/Day22/**/*.sln
+/Day22/**/*.csproj
+/Day22/**/.vsconfig
 
 # Gradle cache directory
 .gradle/
